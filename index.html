@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>বোটানি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটিতে কুঁড়ি সৃষ্টি (budding) হয়?",
+          options: {
+            A: "Homie",
+            B: "Hibiscus rosa-sinensis",
+            C: "Rose",
+            D: "Lemon",
+          },
+          correct: "C",
+          explanation:
+            "<p>কুঁড়ি সৃষ্টি বা মুকুলোদগম (Budding) হলো অযৌন জননের একটি প্রক্রিয়া যেখানে মাতৃদেহ থেকে একটি ছোট কুঁড়ি বা মুকুল উৎপন্ন হয়। এই মুকুলটি পরবর্তীতে বৃদ্ধি পেয়ে নতুন জীবে পরিণত হতে পারে অথবা মাতৃদেহের সাথে সংযুক্ত থেকেও বৃদ্ধি পেতে পারে। গোলাপ গাছের ক্ষেত্রে এই পদ্ধতি দেখা যায়। যদিও 'Homie', জবা (Hibiscus rosa-sinensis) এবং লেবু (Lemon) গাছের ক্ষেত্রে সাধারণত কুঁড়ি সৃষ্টির মাধ্যমে বংশবৃদ্ধি ঘটে না, বরং এদের বংশবিস্তারের জন্য অন্য অঙ্গজ প্রজনন পদ্ধতি ব্যবহার করা হয়।</p>",
+        },
+        {
+          id: 2,
+          question: "কোনটি একলিঙ্গ সহবাসী উদ্ভিদ?",
+          options: {
+            A: "লাউ",
+            B: "জবা",
+            C: "তাল",
+            D: "ধুতুরা",
+          },
+          correct: "A",
+          explanation:
+            "<p>একলিঙ্গ সহবাসী (Monoecious) উদ্ভিদ হলো সেই উদ্ভিদ যার একই দেহে পুং ফুল (পুরুষ জনন অঙ্গযুক্ত) এবং স্ত্রী ফুল (স্ত্রী জনন অঙ্গযুক্ত) আলাদাভাবে জন্মায়। এই ধরনের উদ্ভিদে একটি গাছেই উভয় প্রকার ফুল থাকে, তবে ফুলগুলো স্বতন্ত্র। লাউ (Lagenaria siceraria) গাছ একলিঙ্গ সহবাসী উদ্ভিদের একটি উৎকৃষ্ট উদাহরণ, যেখানে একই গাছে পুরুষ ফুল ও স্ত্রী ফুল পৃথকভাবে ফোটে। জবা ও ধুতুরা উভলিঙ্গ ফুলযুক্ত উদ্ভিদ, আর তাল একলিঙ্গ ভিন্নবাসী উদ্ভিদ।</p>",
+        },
+        {
+          id: 3,
+          question: "কোনটি একলিঙ্গ ভিন্নবাসী উদ্ভিদ?",
+          options: {
+            A: "লাউ",
+            B: "কুমড়া",
+            C: "তাল",
+            D: "ধুতুরা",
+          },
+          correct: "C",
+          explanation:
+            "<p>একলিঙ্গ ভিন্নবাসী (Dioecious) উদ্ভিদ হলো সেই উদ্ভিদ যার পুং ফুল এবং স্ত্রী ফুল ভিন্ন ভিন্ন গাছে জন্মায়। অর্থাৎ, একটি গাছে শুধুমাত্র পুরুষ ফুল (যা পরাগরেণু উৎপন্ন করে) এবং অন্য একটি গাছে শুধুমাত্র স্ত্রী ফুল (যা ডিম্বক ধারণ করে) ফোটে। তাল গাছ (Borassus flabellifer) একলিঙ্গ ভিন্নবাসী উদ্ভিদের একটি চমৎকার উদাহরণ, যেখানে পুরুষ তাল গাছ এবং স্ত্রী তাল গাছ আলাদা হয়। লাউ ও কুমড়া একলিঙ্গ সহবাসী, এবং ধুতুরা উভলিঙ্গ উদ্ভিদ।</p>",
+        },
+        {
+          id: 4,
+          question: "পাতা দ্বারা বংশ বৃদ্ধি হয়-",
+          options: {
+            A: "পাথরকুচি",
+            B: "ডালিয়া",
+            C: "পাতাবাহার",
+            D: "চন্দ্রমল্লিকা",
+          },
+          correct: "A",
+          explanation:
+            "<p>পাথরকুচি (Kalanchoe pinnata) গাছ তার পাতার মাধ্যমে অযৌন প্রজনন সম্পন্ন করে। এই গাছের পাতার কিনারায় ছোট ছোট খাঁজ থাকে, যেখান থেকে অসংখ্য নতুন মুকুল বা অস্থানিক কুঁড়ি সৃষ্টি হয়। এই মুকুলগুলো অনুকূল পরিবেশে মাটিতে পড়লে নতুন চারাগাছ তৈরি হয় এবং বংশবৃদ্ধি করে। ডালিয়া মূল দ্বারা, পাতাবাহার শাখা বা কাণ্ড দ্বারা এবং চন্দ্রমল্লিকা অর্ধবায়বীয় কাণ্ডের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 5,
+          question: "চন্দ্রমল্লিকা বংশ বিস্তার করে কিসের সাহায্যে?",
+          options: {
+            A: "মূলের",
+            B: "ভূ-নিম্নস্থ কাণ্ডের",
+            C: "পাতার",
+            D: "অর্ধবায়বীয় কাণ্ডের",
+          },
+          correct: "D",
+          explanation:
+            "<p>চন্দ্রমল্লিকা (Chrysanthemum) প্রধানত অর্ধবায়বীয় কাণ্ডের (subaerial stem) সাহায্যে বংশ বিস্তার করে। এর কাণ্ডের কিছু অংশ মাটির উপরে এবং কিছু অংশ মাটির কাছাকাছি অনুভূমিকভাবে বৃদ্ধি পায়, যা স্টোলন বা রানার নামে পরিচিত। এই অর্ধবায়বীয় কাণ্ডের পর্বসন্ধি থেকে নতুন উদ্ভিদ জন্ম নিতে পারে। মূল, ভূ-নিম্নস্থ কাণ্ড বা পাতার মাধ্যমে চন্দ্রমল্লিকার বংশবৃদ্ধি তুলনামূলকভাবে কম দেখা যায়।</p>",
+        },
+        {
+          id: 6,
+          question: "বাল্ব থেকে নিম্নের কোন উদ্ভিদ জন্মায়?",
+          options: {
+            A: "আদা",
+            B: "আলু",
+            C: "আখ",
+            D: "পেঁয়াজ",
+          },
+          correct: "D",
+          explanation:
+            "<p>পেঁয়াজ (Allium cepa) একটি বাল্ব (Bulb) বা কন্দ জাতীয় উদ্ভিদ। বাল্ব হলো সংকুচিত কাণ্ড যা রসালো ও পুরু পাতার দ্বারা আবৃত থাকে এবং এর মধ্যে খাদ্য সঞ্চিত থাকে। এই বাল্বের কুঁড়ি থেকে নতুন উদ্ভিদ জন্মায়, যা পেঁয়াজের অঙ্গজ প্রজননের প্রধান পদ্ধতি। আদা রাইজোম (Rhizome), আলু টিউবার (Tuber) এবং আখ কাণ্ডের খণ্ডাংশের (Stem cutting) মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 7,
+          question: "কৃত্রিম অঙ্গজ জননের কোনটিতে সিয়ন ও স্টক থাকে?",
+          options: {
+            A: "শাখা কলম",
+            B: "জোড় কলম",
+            C: "গুটি কলম",
+            D: "দাবা কলম",
+          },
+          correct: "B",
+          explanation:
+            "<p>জোড় কলম (Grafting) হলো কৃত্রিম অঙ্গজ জননের একটি বিশেষ পদ্ধতি যেখানে দুটি ভিন্ন উদ্ভিদের অংশকে এমনভাবে জোড়া লাগানো হয় যাতে তারা একটি একক উদ্ভিদ হিসেবে বৃদ্ধি পায়। এই পদ্ধতিতে, যে অংশের মূল থাকে এবং নিচের দিকে থাকে তাকে স্টক (Stock) বলে এবং যে অংশের কুঁড়ি থাকে এবং উপরের দিকে জোড়া লাগানো হয় তাকে সিয়ন (Scion) বলে। শাখা কলম, গুটি কলম ও দাবা কলমে সিয়ন ও স্টকের ধারণা নেই।</p>",
+        },
+        {
+          id: 8,
+          question: "নিচের কোনটি উদ্ভিদের অযৌন জনন নয়-",
+          options: {
+            A: "অঙ্গজ জনন",
+            B: "পুনরুৎপাদন",
+            C: "মুকুলোৎপাদন",
+            D: "গ্যামিট উৎপাদন",
+          },
+          correct: "D",
+          explanation:
+            "<p>অযৌন জননে গ্যামেট সৃষ্টি বা গ্যামেটের মিলন ঘটে না, বরং একটি একক জীব থেকে নতুন জীবের সৃষ্টি হয়। অঙ্গজ জনন (Vegetative propagation), পুনরুৎপাদন (Regeneration) এবং মুকুলোৎপাদন (Budding) হলো অযৌন জননের বিভিন্ন প্রকার। অন্যদিকে, গ্যামিট উৎপাদন (Gamete formation) হলো যৌন জননের একটি অপরিহার্য ধাপ, যেখানে পুং ও স্ত্রী জননকোষ বা গ্যামেট তৈরি হয় এবং পরবর্তীতে তাদের মিলন ঘটে।</p>",
+        },
+        {
+          id: 9,
+          question: "নিচের কোনটি একলিঙ্গ উদ্ভিদ?",
+          options: {
+            A: "জবা",
+            B: "কুমড়া",
+            C: "ধুতুরা",
+            D: "ঢেঁড়শ",
+          },
+          correct: "B",
+          explanation:
+            "<p>একলিঙ্গ উদ্ভিদ (Unisexual plant) হলো সেই উদ্ভিদ যার ফুলে শুধুমাত্র পুংকেশর (পুরুষ জনন অঙ্গ) অথবা শুধুমাত্র গর্ভকেশর (স্ত্রী জনন অঙ্গ) থাকে। অর্থাৎ, একটি ফুলে হয় পুরুষ জনন অঙ্গ থাকবে অথবা স্ত্রী জনন অঙ্গ থাকবে, উভয়ই একসঙ্গে থাকবে না। কুমড়া (Cucurbita maxima) গাছের ফুলে আলাদাভাবে পুং ফুল ও স্ত্রী ফুল ফোটে। জবা, ধুতুরা ও ঢেঁড়শ উভলিঙ্গ উদ্ভিদ, অর্থাৎ এদের একটি ফুলের মধ্যেই পুংকেশর ও গর্ভকেশর উভয়ই বিদ্যমান।</p>",
+        },
+        {
+          id: 10,
+          question: "নিচের কোনটি উভলিঙ্গ উদ্ভিদ?",
+          options: {
+            A: "লাউ",
+            B: "শসা",
+            C: "তাল",
+            D: "ধুতুরা",
+          },
+          correct: "D",
+          explanation:
+            "<p>উভলিঙ্গ উদ্ভিদ (Bisexual plant) হলো সেই উদ্ভিদ যার একটি ফুলের মধ্যেই পুংকেশর (পুরুষ জনন অঙ্গ) এবং গর্ভকেশর (স্ত্রী জনন অঙ্গ) উভয়ই বিদ্যমান থাকে। ধুতুরা (Datura metel) ফুল উভলিঙ্গ উদ্ভিদের একটি উদাহরণ, যেখানে একটি ফুলের মধ্যেই পুরুষ ও স্ত্রী উভয় জনন অঙ্গ থাকে। লাউ ও শসা একলিঙ্গ সহবাসী, এবং তাল একলিঙ্গ ভিন্নবাসী উদ্ভিদ।</p>",
+        },
+        {
+          id: 11,
+          question: "ভূনিম্নস্থ কাণ্ড দ্বারা অঙ্গজ জনন ঘটে কোনটিতে?",
+          options: {
+            A: "কলা",
+            B: "মিষ্টি আলু",
+            C: "গোলআলু",
+            D: "কাঁকরোল",
+          },
+          correct: "C",
+          explanation:
+            "<p>ভূনিম্নস্থ কাণ্ড (Underground stem) হলো মাটির নিচে অবস্থিত রূপান্তরিত কাণ্ড যা খাদ্য সঞ্চয় এবং অঙ্গজ জননে সহায়তা করে। গোলআলু (Solanum tuberosum) হলো ভূনিম্নস্থ কাণ্ডের একটি স্ফীত রূপ, যাকে টিউবার (Tuber) বলা হয়। এর গায়ে থাকা 'চোখ' বা মুকুল থেকে নতুন চারা উৎপন্ন হতে পারে। কলা কন্দ বা রাইজোম (Rhizome), মিষ্টি আলু স্ফীত মূল (Tuberous root) এবং কাঁকরোল কাণ্ডের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 12,
+          question: "ফাইলোক্যাড দ্বারা অঙ্গজ জনন ঘটে কোনটিতে?",
+          options: {
+            A: "পাথরকুচি",
+            B: "মিষ্টি আলু",
+            C: "থানকুনি",
+            D: "ফণিমনসা",
+          },
+          correct: "D",
+          explanation:
+            "<p>ফাইলোক্যাড (Phylloclade) হলো কাণ্ডের একটি চ্যাপ্টা, সবুজ, পাতার মতো পরিবর্তিত রূপ যা সালোকসংশ্লেষণ করতে সক্ষম এবং অঙ্গজ জননে সহায়তা করে। ফণিমনসা (Opuntia) বা ক্যাকটাসের মতো উদ্ভিদে এই ফাইলোক্যাডের মাধ্যমে অঙ্গজ জনন ঘটে, যেখানে ফাইলোক্যাডের খণ্ডিত অংশ মাটিতে পড়ে নতুন উদ্ভিদ তৈরি করতে পারে। পাথরকুচি পাতায়, মিষ্টি আলু স্ফীত মূলে এবং থানকুনি লতানো কাণ্ডের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 13,
+          question: "নিম্নের কোনটি পাতার মাধ্যমে জনন সম্পন্ন করে?",
+          options: {
+            A: "পাথরকুচি",
+            B: "নাইট কুইন",
+            C: "পটল",
+            D: "আদা",
+          },
+          correct: "A",
+          explanation:
+            "<p>পাথরকুচি (Kalanchoe pinnata) গাছ পাতার মাধ্যমে অঙ্গজ জনন সম্পন্ন করে। এই গাছের পাতার কিনারায় থাকা খাঁজ থেকে অস্থানিক মুকুল সৃষ্টি হয়। এই মুকুলগুলো মাটিতে পড়লে সেখান থেকে নতুন চারাগাছ তৈরি হয়, যা একটি সম্পূর্ণ উদ্ভিদ হিসেবে বৃদ্ধি পায়। নাইট কুইন (Epiphyllum oxypetalum) কাটিংয়ের মাধ্যমে, পটল লতানো কাণ্ডের মাধ্যমে এবং আদা রাইজোমের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 14,
+          question: "নিচের কোনটি পর্ণ কাণ্ডের মাধ্যমে জনন সম্পন্ন করে?",
+          options: {
+            A: "আমরুল",
+            B: "ফণিমনসা",
+            C: "কচু",
+            D: "মুকুল",
+          },
+          correct: "B",
+          explanation:
+            "<p>পর্ণকাণ্ড (Phylloclade) হলো কাণ্ডের একটি পরিবর্তিত রূপ যা চ্যাপ্টা, সবুজ এবং পাতার মতো দেখতে হয়। এটি সালোকসংশ্লেষণ করে এবং অঙ্গজ জননে অংশ নেয়। ফণিমনসা (Opuntia) বা ক্যাকটাসে পর্ণকাণ্ডের মাধ্যমে অঙ্গজ জনন ঘটে, যেখানে পর্ণকাণ্ডের অংশবিশেষ ভেঙে মাটিতে পড়লে নতুন উদ্ভিদ তৈরি হয়। আমরুল লতানো কাণ্ড দ্বারা, কচু কন্দ দ্বারা এবং মুকুল একটি প্রাথমিক বৃদ্ধিপ্রাপ্ত কুঁড়ি যা নতুন শাখা বা ফুল সৃষ্টি করে।</p>",
+        },
+        {
+          id: 15,
+          question: "নিচের কোন উদ্ভিদটি মূল দ্বারা বংশ বৃদ্ধি করে?",
+          options: {
+            A: "আমরুল",
+            B: "ডালিয়া",
+            C: "কাঁকরোল",
+            D: "ফণিমনসা",
+          },
+          correct: "B",
+          explanation:
+            "<p>ডালিয়া (Dahlia) গাছের স্ফীত মূল (Tuberous root) দ্বারা অঙ্গজ জনন সম্পন্ন হয়। এই স্ফীত মূলগুলো খাদ্য সঞ্চয় করে এবং এদের গায়ে অবস্থিত কুঁড়ি থেকে নতুন চারা গজায়। এটি ডালিয়ার বংশবৃদ্ধির একটি প্রধান পদ্ধতি। আমরুল লতানো কাণ্ড দ্বারা, কাঁকরোল কাণ্ড দ্বারা এবং ফণিমনসা পর্ণকাণ্ডের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 16,
+          question: "শাখা কলম পদ্ধতিতে অঙ্গজ জনন হয় কোনটির?",
+          options: {
+            A: "গোলাপ",
+            B: "লিচু",
+            C: "জাম",
+            D: "আপেল",
+          },
+          correct: "A",
+          explanation:
+            "<p>শাখা কলম (Stem cutting) হলো কৃত্রিম অঙ্গজ জননের একটি জনপ্রিয় পদ্ধতি যেখানে মাতৃ উদ্ভিদের একটি শাখা বা কাণ্ডের অংশবিশেষ কেটে মাটিতে রোপণ করা হয়। এই কাটা অংশ থেকে অস্থানিক মূল গজায় এবং নতুন স্বাধীন উদ্ভিদ তৈরি হয়। গোলাপ (Rosa) গাছের বংশবৃদ্ধির জন্য এই পদ্ধতি বহুলভাবে ব্যবহৃত হয়, কারণ এটি সহজ এবং দ্রুত বংশবিস্তার ঘটায়। লিচু, জাম ও আপেলের জন্য সাধারণত জোড় কলম বা গুটি কলম বেশি উপযোগী।</p>",
+        },
+        {
+          id: 17,
+          question: "চোখ কলম পদ্ধতিতে বংশবৃদ্ধি করে কোনটি?",
+          options: {
+            A: "জাম",
+            B: "কুল",
+            C: "লেবু",
+            D: "কামিনী",
+          },
+          correct: "B",
+          explanation:
+            "<p>চোখ কলম (Bud grafting) হলো জোড় কলমের একটি বিশেষ প্রকার যেখানে একটি উদ্ভিদের একটি কুঁড়ি (চোখ) অন্য একটি উদ্ভিদের স্টকের সাথে জোড়া লাগানো হয়। এই পদ্ধতিতে, একটি মাত্র কুঁড়ি ব্যবহার করা হয়, যা মূল উদ্ভিদের বৈশিষ্ট্য বজায় রাখতে সাহায্য করে। কুল (Ziziphus mauritiana) গাছের বংশবৃদ্ধির জন্য এই পদ্ধতি বেশ কার্যকর, কারণ এটি বিভিন্ন জাতের কুল উৎপাদনে সহায়ক। জাম, লেবু ও কামিনীর জন্য অন্যান্য কলমের পদ্ধতি বা বীজ ব্যবহার করা হয়।</p>",
+        },
+        {
+          id: 18,
+          question: "জোড় কলম পদ্ধতিতে অঙ্গজ জনন হয় কোনটির?",
+          options: {
+            A: "কুল",
+            B: "আঙ্গুর",
+            C: "শিউলি",
+            D: "লেবু",
+          },
+          correct: "A",
+          explanation:
+            "<p>জোড় কলম (Grafting) হলো কৃত্রিম অঙ্গজ জননের একটি পদ্ধতি যেখানে দুটি ভিন্ন উদ্ভিদের অংশকে এমনভাবে যুক্ত করা হয় যাতে তারা একটি একক উদ্ভিদ হিসেবে বৃদ্ধি পায়। এর মাধ্যমে কাঙ্ক্ষিত বৈশিষ্ট্যের উদ্ভিদ তৈরি করা সম্ভব হয়। কুল গাছের বিভিন্ন জাতের বৈশিষ্ট্য বজায় রাখতে এবং ফলন বাড়ানোর জন্য জোড় কলম পদ্ধতি ব্যবহার করা হয়। আঙ্গুর সাধারণত শাখা কলম, শিউলি বীজ বা কলমের মাধ্যমে এবং লেবু গুটি কলম (Layering) বা শাখা কলমের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 19,
+          question: "গোল আলুর অঙ্গজ প্রজনন অঙ্গ কোনটি?",
+          options: {
+            A: "কাণ্ড",
+            B: "মূল",
+            C: "পাতা",
+            D: "মুকুল",
+          },
+          correct: "A",
+          explanation:
+            "<p>গোল আলু (Solanum tuberosum) হলো একটি ভূনিম্নস্থ কাণ্ড, যাকে টিউবার (Tuber) বলা হয়। এটি রূপান্তরিত কাণ্ড যা খাদ্য সঞ্চয় করে স্ফীত হয় এবং এর গায়ে অবস্থিত 'চোখ' বা সুপ্ত মুকুল (buds) থেকে নতুন চারা উৎপন্ন হয়। সুতরাং, গোল আলুর অঙ্গজ প্রজনন অঙ্গ হলো কাণ্ড। মূল, পাতা বা একক মুকুল এর প্রধান প্রজনন অঙ্গ নয়।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "দেহের অংশ বিশেষ হতে সরাসরি বংশধর উৎপন্ন হওয়ার প্রক্রিয়াকে কী বলে?",
+          options: {
+            A: "অঙ্গজ প্রজনন",
+            B: "নিষেক",
+            C: "যৌন জনন",
+            D: "দ্বিনিষেক",
+          },
+          correct: "A",
+          explanation:
+            "<p>দেহের কোনো অঙ্গ, যেমন—কাণ্ড, মূল বা পাতা থেকে সরাসরি নতুন বংশধর উৎপন্ন হওয়ার প্রক্রিয়াকে অঙ্গজ প্রজনন (Vegetative propagation) বলে। এটি অযৌন জননের একটি প্রকার, যেখানে কোনো জনন কোষের মিলন ছাড়াই নতুন উদ্ভিদ সৃষ্টি হয়। নিষেক (Fertilization) ও দ্বিনিষেক (Double fertilization) যৌন জননের অংশ, যেখানে গ্যামেটের মিলন ঘটে। যৌন জননে পুং ও স্ত্রী গ্যামেটের সমন্বয়ে নতুন জীব সৃষ্টি হয়।</p>",
+        },
+        {
+          id: 21,
+          question: "মুকুলোদগম পাওয়া যায় কোনটিতে?",
+          options: {
+            A: "ইস্ট",
+            B: "ফার্ন",
+            C: "সাইকাস",
+            D: "নগ্নবীজী",
+          },
+          correct: "A",
+          explanation:
+            "<p>মুকুলোদগম (Budding) হলো অযৌন জননের একটি পদ্ধতি যা ইস্ট (Yeast) নামক এককোষী ছত্রাকে দেখা যায়। এই প্রক্রিয়ায় মাতৃকোষের গায়ে একটি ছোট মুকুলের মতো প্রবৃদ্ধি তৈরি হয়। এই মুকুলটি ধীরে ধীরে বৃদ্ধি পেয়ে মাতৃকোষ থেকে বিচ্ছিন্ন হয়ে স্বাধীন নতুন ইস্ট কোষে পরিণত হয়। ফার্ন স্পোরের মাধ্যমে, সাইকাস বীজের মাধ্যমে এবং নগ্নবীজী উদ্ভিদ সাধারণত বীজের মাধ্যমেই বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 22,
+          question: "অর্ধবায়বীয় কাণ্ড দ্বারা অঙ্গজ প্রজনন হয় কোনটির?",
+          options: {
+            A: "শতমূলী",
+            B: "পুদিনা",
+            C: "আখ",
+            D: "কচুরিপানা",
+          },
+          correct: "D",
+          explanation:
+            "<p>অর্ধবায়বীয় কাণ্ড (Subaerial stem) হলো সেই কাণ্ড যা মাটির পৃষ্ঠের উপরে বা সামান্য নিচে অনুভূমিকভাবে বৃদ্ধি পায় এবং এর পর্বসন্ধি থেকে নতুন উদ্ভিদ উৎপন্ন হয়। কচুরিপানা (Eichhornia crassipes) অর্ধবায়বীয় কাণ্ডের মাধ্যমে দ্রুত বংশবৃদ্ধি করে। এর কান্ডের কিছু অংশ পানির উপরে এবং কিছু অংশ পানির নিচে থাকে, যা নতুন চারা তৈরি করে। শতমূলী মূলের মাধ্যমে, পুদিনা ভূ-পৃষ্ঠস্থ লতানো কাণ্ডের মাধ্যমে এবং আখ কাণ্ডের খণ্ডাংশের মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 23,
+          question: "মূলের মাধ্যমে অঙ্গজ প্রজনন হয় কোনটির?",
+          options: {
+            A: "মিষ্টি আলু",
+            B: "গোল আলু",
+            C: "চুপরি আলু",
+            D: "ওলকচু",
+          },
+          correct: "A",
+          explanation:
+            "<p>মিষ্টি আলু (Ipomoea batatas) স্ফীত মূলের (Tuberous root) মাধ্যমে অঙ্গজ প্রজনন করে। এর মূল খাদ্য সঞ্চয়ের ফলে মোটা হয় এবং এই মূলের গায়ে থাকা অস্থানিক কুঁড়ি থেকে নতুন চারা উৎপন্ন হতে পারে। গোল আলু কাণ্ডের (টিউবার), চুপরি আলু কন্দের (Corm) এবং ওলকচু ভূনিম্নস্থ কাণ্ডের (ভূনিম্নস্থ রাইজোম) মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+        {
+          id: 24,
+          question: "কাণ্ড দ্বারা প্রজনন সম্পন্ন করে-",
+          options: {
+            A: "গাজর",
+            B: "আদা",
+            C: "ডালিয়া",
+            D: "ওলকচু",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদা (Zingiber officinale) রাইজোম (Rhizome) নামক ভূ-সমান্তরাল কাণ্ডের মাধ্যমে অঙ্গজ প্রজনন সম্পন্ন করে। এই কাণ্ড মাটির নিচে অনুভূমিকভাবে বৃদ্ধি পায় এবং এর পর্ব ও পর্বসন্ধি থেকে নতুন শাখা ও মূল উৎপন্ন হয়। গাজর মূল দ্বারা, ডালিয়া স্ফীত মূল দ্বারা এবং ওলকচু ভূনিম্নস্থ কাণ্ডের (কন্দ) মাধ্যমে বংশবৃদ্ধি করে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                        <label class="option" data-option="${option}">
+                          <div class="circle">${option}</div>
+                          <span class="option-text">${question.options[option]}</span>
+                        </label>
+                      `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                           <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                           <div class="explanation-content">
+                             <div class="explanation-label">ব্যাখ্যা:</div>
+                             ${question.explanation}
+                           </div>
+                         </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                      <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                      <div class="options">
+                        ${optionsHTML}
+                      </div>
+                      ${explanationHTML}
+                    `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
